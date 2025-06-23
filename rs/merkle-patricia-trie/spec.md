@@ -1,118 +1,118 @@
-# MPC SPEC
+# MPT SPEC
 
-## 1. core structure
+## 1. Core Structure
 
-### 1-1. Node Type
+### 1.1. Node Types
+
+#### Empty Node
+
+- This node contains nothing
+- In general, it is represented as None or null
 
 #### Leaf Node
 
-- thie node contains nothing
-- In general, it is explained as None or null
-
-#### Leaf Node
-
-- structure: `[path, value]`
-- it express the end of key
-- `path` : remaining pathes (nibble array)
-- `value` : the value that is stored actually
+- Structure: `[path, value]`
+- Represents the end of a key
+- `path`: Remaining path (nibble array)
+- `value`: The actual stored value
 
 #### Extension Node
 
-- structure: `[path, next_node]`
-- it compress common prefix
-- `path` : common path (nibble array)
-- `next_node` : next node's reference
+- Structure: `[path, next_node]`
+- Compresses common prefixes
+- `path`: Common path (nibble array)
+- `next_node`: Reference to the next node
 
 #### Branch Node
 
-- structure: ``[v0, v1 ..., v15, value]
-- this type of node contains 17 element
-- `v0-v15`: child nodes for each hex character
-- `value`: the value of this node itself if it has a value
+- Structure: `[v0, v1, ..., v15, value]`
+- This type of node contains 17 elements
+- `v0-v15`: Child nodes for each hex character (0-F)
+- `value`: The value of this node itself (if it has one)
 
-### 1-2. Path Encoding
+### 1.2. Path Encoding
 
 ```rust
-struct ComactEncoding {
+struct CompactEncoding {
     // Hex Prefix (HP) encoding
     // First nibble indicates node type and path odd/even
 }
 ```
 
-- Features
+- Features:
 
-  - efficiently encode odd-length paths
-  - represent node type (Leaf/Extension) with 1 bit
-  - represent whether path length is odd or even with 1 bit
+  - Efficiently encode odd-length paths
+  - Represent node type (Leaf/Extension) with 1 bit
+  - Represent whether path length is odd or even with 1 bit
 
-- rule of encoding
-  - `0x0` : extension node and even length
-  - `0x1` : extension node and odd length
-  - `0x2` : reaf node and even length
-  - `0x3` : reaf node and odd length
+- Encoding rules:
+  - `0x0`: Extension node with even length
+  - `0x1`: Extension node with odd length
+  - `0x2`: Leaf node with even length
+  - `0x3`: Leaf node with odd length
 
-### 1-3. RLP (Recursive Length Prefix) Encoding
+### 1.3. RLP (Recursive Length Prefix) Encoding
 
 ```rust
 struct RLPEncoder {
-    // Etandard serialize pattern in etherium
+    // Standard serialization pattern in Ethereum
 }
 ```
 
-- Features
+- Features:
   - Encodes arbitrary nested byte arrays
-  - Compact and easy to understand boundaries
-  - No resolution when decoding
+  - Compact with clear boundary detection
+  - No ambiguity when decoding
 
-## 2. Main Struct And Features
+## 2. Main Structures and Features
 
-### 2.1 TrieNode Structure
+### 2.1. TrieNode Structure
 
 ```rust
 enum TrieNode {
     Empty,
     Leaf {
         path: NibblePath,
-        value: Vec<u8>
+        value: Vec<u8>,
     },
     Extension {
         path: NibblePath,
         node: NodeReference,
     },
     Branch {
-        branches: [Option<NodeReference>; 16]m
+        branches: [Option<NodeReference>; 16],
         value: Option<Vec<u8>>,
     }
 }
 ```
 
-### 2.2 NoodeReference Structure
+### 2.2. NodeReference Structure
 
 ```rust
 enum NodeReference {
     Hash(H256),
-    Inline(TrieNode)
+    Inline(TrieNode),
 }
 ```
 
-- ## Features
-  - insert directry when the node's data size under 32 bites
-  - reference with hash when the node's data size over 32 bites
-  - the good balance between strage efficiency and accecc speed
+- Features:
+  - Insert directly when the node's data size is under 32 bytes
+  - Reference with hash when the node's data size is over 32 bytes
+  - Good balance between storage efficiency and access speed
 
-### 2.3 TrieDB Structure
+### 2.3. TrieDB Structure
 
 ```rust
 struct TrieDB {
-    root: H256,                     // root hash
-    db: Box<dyn Database>,          // perciste rayer
-    cache: HashMap<H256, TrieNode>, // memory cache
+    root: H256,                     // Root hash
+    db: Box<dyn Database>,          // Persistence layer
+    cache: HashMap<H256, TrieNode>, // Memory cache
 }
 ```
 
-## 3. Neccesary Features
+## 3. Core Functionality
 
-### 3.1 basic operation
+### 3.1. Basic Operations
 
 **Insert**
 
@@ -120,9 +120,9 @@ struct TrieDB {
 fn insert(&mut self, key: &[u8], value: &[u8]) -> Result<(), Error>
 ```
 
-- convert keys to nibbles
-- select and insert the appropriate node type
-- split and join nodes as needed
+- Convert keys to nibbles
+- Select and insert the appropriate node type
+- Split and join nodes as needed
 
 **Get**
 
@@ -130,19 +130,19 @@ fn insert(&mut self, key: &[u8], value: &[u8]) -> Result<(), Error>
 fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error>
 ```
 
-- follow a path to find a value
-- resolve a hash reference
+- Follow a path to find a value
+- Resolve hash references
 
 **Remove**
 
 ```rust
-fn remove(&mut self, key: &[u8]) -> Result<Option<Vec<u8>, Error>
+fn remove(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>, Error>
 ```
 
-- delete node
-- join node as needed (Optimize)
+- Delete node
+- Join nodes as needed (optimization)
 
-### 3.2 Markle
+### 3.2. Merkle Features
 
 **Root Hash**
 
@@ -150,21 +150,21 @@ fn remove(&mut self, key: &[u8]) -> Result<Option<Vec<u8>, Error>
 fn root_hash(&self) -> H256
 ```
 
-- a 32-byte hash representing the state of the entire trie,
-- efficiently validating state changes
+- A 32-byte hash representing the state of the entire trie
+- Enables efficient validation of state changes
 
-**Markle Proof**
+**Merkle Proof**
 
 ```rust
-struct MarkleProof {
-    path: Vec<ProofNode>, // path to root
+struct MerkleProof {
+    path: Vec<ProofNode>, // Path to root
 }
 
-fn generate_proof(&self, key: &[u8]) -> Result<MarkleProof, Error>
-fn verify_proor(root: H256, key: &[u8], value: &[u8], proof: &MarkleProof) -> bool
+fn generate_proof(&self, key: &[u8]) -> Result<MerkleProof, Error>
+fn verify_proof(root: H256, key: &[u8], value: &[u8], proof: &MerkleProof) -> bool
 ```
 
-### 3.3 Persistence and Caching
+### 3.3. Persistence and Caching
 
 ```rust
 trait Database {
@@ -179,40 +179,40 @@ struct CachedDB {
 }
 ```
 
-## 4. specific requirement of etherium
+## 4. Ethereum-Specific Requirements
 
 ### 4.1. State Trie
 
 ```rust
 struct StateAccount {
     nonce: u64,
-    banlance: U256,
+    balance: U256,
     storage_root: H256,
-    code_hash: H256
+    code_hash: H256,
 }
 ```
 
-### 4.2 Storage Trie
+### 4.2. Storage Trie
 
-- every accounts have storage trie
-- key: 32 bites storage position
-- value: 32 bites storage value
+- Every account has its own storage trie
+- Key: 32-byte storage position
+- Value: 32-byte storage value
 
-### 4.3 Transaction Trie
+### 4.3. Transaction Trie
 
-- stores transactions in a block
-- key: transaction index (RLP encoded)
-- value: transaction data
+- Stores transactions in a block
+- Key: Transaction index (RLP encoded)
+- Value: Transaction data
 
-### 4.4 Receipt Trie
+### 4.4. Receipt Trie
 
-- store transaction execution data
-- key: transaction index
-- value recipiet data (ex, usage amout of gas, logs etc...)
+- Stores transaction execution results
+- Key: Transaction index
+- Value: Receipt data (e.g., gas used, logs, etc.)
 
-## 5. Optimization Feature
+## 5. Optimization Features
 
-### 5.1 compress patricia marcle tree
+### 5.1. Compressed Patricia Merkle Tree
 
 ```rust
 struct CompressedPath {
@@ -220,33 +220,33 @@ struct CompressedPath {
 }
 ```
 
-### 5.2 reference count
+### 5.2. Reference Counting
 
 ```rust
 struct RefCountedNode {
     node: TrieNode,
-    ref_count: u32
+    ref_count: u32,
 }
 ```
 
-### 5.3 snapshot
+### 5.3. Snapshots
 
 ```rust
 struct TrieSnapshot {
     root: H256,
-    timestamp: u64
+    timestamp: u64,
 }
 ```
 
 ## 6. Security Features
 
-### 6.1 Hash integrity
+### 6.1. Hash Integrity
 
-- all nodes are hashed with Keccak-256
-- hash chaining prevents tampering
+- All nodes are hashed with Keccak-256
+- Hash chaining prevents tampering
 
-### 6.2 DoS attack countermeasures
+### 6.2. DoS Attack Countermeasures
 
-- depth limit
-- appropriate gas cost setting
-- memory usage limit
+- Depth limits
+- Appropriate gas cost settings
+- Memory usage limits
